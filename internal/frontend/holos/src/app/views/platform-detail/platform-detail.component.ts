@@ -7,8 +7,9 @@ import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { JsonValue } from '@bufbuild/protobuf';
 import { FormlyFieldConfig, FormlyFormOptions, FormlyModule } from '@ngx-formly/core';
 import { FormlyMaterialModule } from '@ngx-formly/material';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, of, switchMap, takeUntil } from 'rxjs';
 import { PlatformService } from '../../services/platform.service';
+import { Platform } from '../../gen/holos/platform/v1alpha1/platform_pb';
 
 @Component({
   selector: 'app-platform-detail',
@@ -30,6 +31,7 @@ import { PlatformService } from '../../services/platform.service';
 export class PlatformDetailComponent implements OnDestroy {
   private platformService = inject(PlatformService);
   private platformId: string = "";
+  private platform: Platform = new Platform()
 
   private destroy$: Subject<boolean> = new Subject<boolean>();
   form = new FormGroup({});
@@ -52,8 +54,11 @@ export class PlatformDetailComponent implements OnDestroy {
 
   onSubmit(model: JsonValue) {
     if (this.form.valid) {
-      console.log(model)
-      window.alert("call UpdatePlatform")
+      console.log(this.platform)
+      this.platformService
+        .updateModel(this.platform, model)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(platform => { console.log(platform) })
     }
   }
 
@@ -64,6 +69,9 @@ export class PlatformDetailComponent implements OnDestroy {
       .getPlatform(platformId)
       .pipe(takeUntil(this.destroy$))
       .subscribe(platform => {
+        if (platform !== undefined) {
+          this.platform = platform
+        }
         if (platform?.spec?.model !== undefined) {
           this.setModel(platform.spec.model.toJson())
         }
@@ -71,7 +79,7 @@ export class PlatformDetailComponent implements OnDestroy {
           // NOTE: We could mix functions into the json data via mapped fields,
           // but consider carefully before doing so.  Refer to
           // https://formly.dev/docs/examples/other/json-powered
-          this.fields = platform.spec.form.fields.map(field => field.toJson() as FormlyFieldConfig)
+          this.fields = platform.spec.form.fieldConfigs.map(fieldConfig => fieldConfig.toJson() as FormlyFieldConfig)
         }
       })
   }
