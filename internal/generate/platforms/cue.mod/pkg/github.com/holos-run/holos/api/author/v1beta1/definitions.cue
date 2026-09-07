@@ -67,9 +67,9 @@ _TaskName: {
 
 // https://holos.run/docs/api/author/v1beta1/#Kubernetes
 #Kubernetes: {
-	Name:            _
-	Resources:       _
-	KustomizeConfig: _
+	Name:      _
+	Resources: _
+	KustomizeConfig: {BasePath: string | *""} & _
 
 	TaskSet: spec: tasks: {
 		let ResourcesOutput = "resources.gen.yaml"
@@ -87,7 +87,7 @@ _TaskName: {
 		}
 		kustomize: {
 			kind: "Kustomize"
-			if KustomizeConfig.BasePath == _|_ {
+			if KustomizeConfig.BasePath == "" {
 				inputs: [
 					ResourcesOutput,
 					for x in KustomizeConfig.Files {x.Source},
@@ -95,13 +95,13 @@ _TaskName: {
 			}
 			output: "\(Name).gen.yaml"
 			"kustomize": {
-				if KustomizeConfig.BasePath != _|_ {
+				if KustomizeConfig.BasePath != "" {
 					basePath: KustomizeConfig.BasePath
 					if KustomizeConfig.LoadRestrictor != _|_ {
 						loadRestrictor: KustomizeConfig.LoadRestrictor
 					}
 				}
-				if KustomizeConfig.BasePath == _|_ {
+				if KustomizeConfig.BasePath == "" {
 					kustomization: KustomizeConfig.Kustomization & {
 						"resources": [
 							ResourcesOutput,
