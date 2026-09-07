@@ -87,17 +87,29 @@ _TaskName: {
 		}
 		kustomize: {
 			kind: "Kustomize"
-			inputs: [
-				ResourcesOutput,
-				for x in KustomizeConfig.Files {x.Source},
-			]
-			output: "\(Name).gen.yaml"
-			"kustomize": kustomization: KustomizeConfig.Kustomization & {
-				"resources": [
+			if KustomizeConfig.BasePath == _|_ {
+				inputs: [
 					ResourcesOutput,
 					for x in KustomizeConfig.Files {x.Source},
-					for x in KustomizeConfig.Resources {x.Source},
 				]
+			}
+			output: "\(Name).gen.yaml"
+			"kustomize": {
+				if KustomizeConfig.BasePath != _|_ {
+					basePath: KustomizeConfig.BasePath
+					if KustomizeConfig.LoadRestrictor != _|_ {
+						loadRestrictor: KustomizeConfig.LoadRestrictor
+					}
+				}
+				if KustomizeConfig.BasePath == _|_ {
+					kustomization: KustomizeConfig.Kustomization & {
+						"resources": [
+							ResourcesOutput,
+							for x in KustomizeConfig.Files {x.Source},
+							for x in KustomizeConfig.Resources {x.Source},
+						]
+					}
+				}
 			}
 		}
 	}
